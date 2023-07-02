@@ -38,6 +38,7 @@ def signup():
     except Exception as e:
         return f'{e}', 400
 
+
 @app.route('/signin', methods=['POST'])
 def signin():
     response = request.json
@@ -75,7 +76,7 @@ def userInfo():
 
 @app.route('/fetchMessagesByChatId', methods=['POST'])
 @check_token
-def getData():
+def getMessagesData():
     uid = request.user['uid']
     chat_id = request.json['chat_id']
     type = request.json['type']
@@ -84,7 +85,34 @@ def getData():
             collectionData = db.collection(str(uid)).document(
                 type).collection(chat_id).stream()
             all_messages = [message.to_dict() for message in collectionData]
-            return jsonify({'response':all_messages}), 200
+            return jsonify({'response': all_messages}), 200
+
+            # return jsonify({"message": 'tyes'}), 200
+    except Exception as e:
+        return f'{e}'
+
+
+@app.route('/fetchTitleByUser', methods=['POST'])
+@check_token
+def getDataByTitle():
+    titlesArray = []
+    titles = {}
+    uid = request.user['uid']
+    type = request.json['type']
+    try:
+        if chat_collection:
+            collectionData = db.collection(
+                '3zh9AxSQZIX0AXkmRttb421NY622').document('title').collections()
+            for collection in collectionData:
+                titles = {} #need to correct it 
+                for index,doc in enumerate(collection.stream()):
+                    titles['id'] = doc.id
+                    # titles['id']=doc.id
+                    titles['text'] = doc.to_dict()['title']
+                    titlesArray.append(titles)
+                    print(f'{doc} =>', f"{doc.id} => {doc.to_dict()}")
+
+            return jsonify({'response': titlesArray}), 200
 
             # return jsonify({"message": 'tyes'}), 200
     except Exception as e:
@@ -147,9 +175,9 @@ def create(uid, user, chatgpt, collection_type):
         db.collection(str(uid)).document('messages').collection(
             collection_type).document(str(chat_collection_length)).set(message)
 
-        if not db.collection(str(uid)).document('title').collection(collection_type).document(str(title_collection_length)).get().exists:
+        if not db.collection(str(uid)).document('title').collection(collection_type).document(collection_type).get().exists:
             db.collection(str(uid)).document('title').collection(
-                collection_type).document(str(title_collection_length)).set(titleData)
+                collection_type).document(collection_type).set(titleData)
 
         return message
     except Exception as e:

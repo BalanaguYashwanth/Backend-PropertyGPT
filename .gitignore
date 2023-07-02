@@ -1,0 +1,6 @@
+key.json
+.env
+fenv
+__pycache__
+modeling.json
+config.py

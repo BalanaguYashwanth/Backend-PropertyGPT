@@ -38,17 +38,6 @@ def signup():
     except Exception as e:
         return f'{e}', 400
 
-
-# @app.route('/signin-uid')
-# def signinUID():
-#     uid = request.json['uid']
-#     try:
-#         token = auth.create_custom_token(uid)
-#         return jsonify({'token': 'token'}), 200
-#     except Exception as e:
-#         return f'{e}'
-
-
 @app.route('/signin', methods=['POST'])
 def signin():
     response = request.json
@@ -82,59 +71,14 @@ def userInfo():
         return jsonify({'userInfo': request.user['email']}), 200
     except Exception as e:
         return f'{e}', 400
-
-
-# @app.route('/add', methods=['POST'])
-# @check_token
-# def create():
-#     try:
-#         print(request.user)
-#         uid = request.user['uid']
-#         id = request.json['id']
-#         chat_collection.document(uid).set(request.json)
-#         return jsonify({"message": "successfully created"}), 200
-#     except Exception as e:
-#         return f'Error Occured: {e}', 400
-
-
-@app.route('/v1/chat/completions', methods=['POST'])
-@check_token
-def ask():
-    open_ai_key = os.environ['OPENAI_API_KEY']
-    open_ai_url = os.environ['OPENAI_API_URL']
-
-
-    OpenAIHeaders = {
-        "Content-Type": "application/json",
-        "Authorization":  f'Bearer {open_ai_key}',
-    }
-
-    try:
-        userRequest = request.json
-
-        uid =  request.user['uid']
-        userData = userRequest['messages'][0]['content']
-
-        # jsonResponse = json.dumps(userRequest)
-        # response = requests.post(f'{open_ai_url}/v1/chat/completions', jsonResponse, headers=OpenAIHeaders)
-        # content = response.json()
-
-        # chatGPTResponse = content['choices'][0]['message']['content']
-        # create(uid=uid,user=userData,chatgpt=chatGPTResponse)
-
-        create(uid=uid,user='userData',chatgpt='chatGPTResponse')
-        return jsonify({"message": 'content'}), 200
-    except Exception as e:
-        return f'Error Occured: {e}', 400
     
-
 @app.route('/get', methods=['GET'])
 def getData():
     try:
         if chatv2_collection:
             print('hello')
-            #document is UID 
-            chats = db.collection('chat_v2').document('wOtArbf5bTZlvaBis1El').collection('knowmore').document('chat1').get()
+            # here document is UID 
+            chats = db.collection('chat_v2').document('wOtArbf5bTZlvaBis1El').collection('messages').document('chat1').get()
             print('chats----', chats.to_dict())
             # for chat in chats:
             #     print('chats----', chat.to_dict())
@@ -144,19 +88,62 @@ def getData():
 
 
 
+@app.route('/v1/chat/completions', methods=['POST'])
+@check_token
+def ask():
+    open_ai_key = os.environ['OPENAI_API_KEY']
+    open_ai_url = os.environ['OPENAI_API_URL']
 
+    OpenAIHeaders = {
+        "Content-Type": "application/json",
+        "Authorization":  f'Bearer {open_ai_key}',
+    }
 
-def create(uid,user,chatgpt):
+    try:
+        userRequest = request.json['data']
+        collection_type = request.json['collection_type']
+
+        uid =  request.user['uid']
+        userData = userRequest['messages'][0]['content']
+
+        jsonResponse = json.dumps(userRequest)
+        response = requests.post(f'{open_ai_url}/v1/chat/completions', jsonResponse, headers=OpenAIHeaders)
+        content = response.json()
+        
+        chatGPTResponse = content['choices'][0]['message']['content']
+        message = create(uid=uid,user=userData,chatgpt=chatGPTResponse, collection_type=collection_type)
+
+        # message = create(uid=uid, user='what is Stack', chatgpt='Stack is related to data structures', collection_type=collection_type)
+        return jsonify({"message": message}), 200
+    except Exception as e:
+        return f'Error Occured: {e}', 400
+
+def create(uid,user,chatgpt,collection_type):
     try:
         message = {}
-        message['id'] = 4
+        titleData={}
+  
+        title_collection_length = 0
+        chat_collection_length = 0
+
+        if db.collection(str(uid)):
+            chat_collection = db.collection(str(uid)).document('messages').collection(collection_type).count().get()
+            chat_collection_length = chat_collection[0][0].value
+          
+                
+        message['id'] = chat_collection_length
         message['user'] = user
         message['chatgpt'] = chatgpt
-        user_chat_collection = db.collection(str(uid))
-        print('goooo=====')
-        response = user_chat_collection.document('4').set(message)
-        print('====boooo=====')
-        print('response---', response)
+
+        titleData['title'] = user[:25]
+
+
+        db.collection(str(uid)).document('messages').collection(collection_type).document(str(chat_collection_length)).set(message)
+
+        if not db.collection(str(uid)).document('title').collection(collection_type).document(str(title_collection_length)).get().exists:
+            db.collection(str(uid)).document('title').collection(collection_type).document(str(title_collection_length)).set(titleData)
+
+        return message
     except Exception as e:
         return f'Error Occured: {e}', 400
 

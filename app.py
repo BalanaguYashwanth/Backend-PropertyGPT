@@ -3,7 +3,6 @@ import json
 import requests
 from flask import Flask, request, jsonify
 from config import chat_collection, pb, db
-
 from functools import wraps
 from firebase_admin import auth
 from flask_cors import CORS

@@ -97,20 +97,21 @@ def getMessagesData():
 def getDataByTitle():
     titlesArray = []
     titles = {}
+    id = 0
     uid = request.user['uid']
     type = request.json['type']
     try:
         if chat_collection:
-            collectionData = db.collection(
-                '3zh9AxSQZIX0AXkmRttb421NY622').document('title').collections()
+            collectionData = db.collection(uid).document('title').collections()
             for collection in collectionData:
-                titles = {} #need to correct it 
-                for index,doc in enumerate(collection.stream()):
-                    titles['id'] = doc.id
+                titles = {}
+                for index, doc in enumerate(collection.stream()):
+                    titles['type'] = doc.id
+                    titles['id'] = id
                     # titles['id']=doc.id
                     titles['text'] = doc.to_dict()['title']
                     titlesArray.append(titles)
-                    print(f'{doc} =>', f"{doc.id} => {doc.to_dict()}")
+                    id = id+1
 
             return jsonify({'response': titlesArray}), 200
 

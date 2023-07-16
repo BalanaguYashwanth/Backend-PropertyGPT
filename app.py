@@ -1,4 +1,5 @@
-import os
+import os, ast
+import re
 import json
 import requests
 from flask import Flask, request, jsonify
@@ -6,15 +7,53 @@ from config import chat_collection, pb, db
 from functools import wraps
 from firebase_admin import auth
 from flask_cors import CORS
+import google.generativeai as palm
 
 # Initialize Flask App
 app = Flask(__name__)
 CORS(app)
+palm.configure(api_key=os.environ['BARD_API_KEY'])
 
 
 @app.route("/")
 def home():
     return {'status': 200}
+
+@app.route("/askHouzz",methods=['POST'])
+def bardAPI():
+    response = request.json
+    message = response['message']
+    try:
+        if message:
+            updated_user_prompt = prompt(message)
+            # updated_user_prompt ='looking for properties and builders in Gurgaon that have flat configurations within my budget of 1 crore. Could you please provide me with information about the builders, their ongoing projects, flat configurations, builder details and project location also retrive text in json format '
+            response = palm.generate_text(prompt=updated_user_prompt,max_output_tokens=2000)
+            jsonResponse = response.result
+            cleanedJSONResponse = cleanJSON(jsonResponse)
+     
+            # return json.loads(cleanedJSONResponse), 200
+            # return jsonify(cleanedJSONResponse),200,
+            return jsonResponse
+        else:
+            return jsonify({'response': 'please provide valid information'}), 200
+    except Exception as e:
+      return f'{e}', 400
+
+def prompt(user_input):
+    # prompt_message = f'Please search properties and builders of Project Size, here are the data needed for Flat Configurations: About builder, Website link , Price list, amenities, how many units availabile, photo links, locations, google map location link and landmarks, and {user_input}. Also retrive text data in json format'
+    prompt_message = f'looking for properties and builders - f{user_input}. Could you please provide me with information about the builders, their ongoing projects, flat configurations also retrive response in json format'
+    return prompt_message
+
+def cleanJSON(jsonResponse):
+    regex1 = '```json'
+    regex2 = '```'
+    regex_list = [regex1,regex2]
+    for regex in regex_list:
+        if re.search(regex,jsonResponse):
+            jsonResponse = re.sub(regex,'',jsonResponse)
+    # indentedJSON = json.dumps(json.loads(jsonResponse), indent=2)
+    # result = ast.literal_eval(indentedJSON)
+    return jsonResponse
 
 # todo items -
 # keep validations like if email is not there then it should say "required email"

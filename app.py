@@ -27,13 +27,13 @@ def bardAPI():
         if message:
             updated_user_prompt = prompt(message)
             # updated_user_prompt ='looking for properties and builders in Gurgaon that have flat configurations within my budget of 1 crore. Could you please provide me with information about the builders, their ongoing projects, flat configurations, builder details and project location also retrive text in json format '
-            response = palm.generate_text(prompt=updated_user_prompt,max_output_tokens=2000)
+            response = palm.generate_text(prompt=updated_user_prompt,max_output_tokens=2000, temperature=0.7)
             jsonResponse = response.result
             cleanedJSONResponse = cleanJSON(jsonResponse)
      
-            # return json.loads(cleanedJSONResponse), 200
+            return json.loads(cleanedJSONResponse), 200
             # return jsonify(cleanedJSONResponse),200,
-            return jsonResponse
+            # return cleanedJSONResponse
         else:
             return jsonify({'response': 'please provide valid information'}), 200
     except Exception as e:
@@ -41,7 +41,7 @@ def bardAPI():
 
 def prompt(user_input):
     # prompt_message = f'Please search properties and builders of Project Size, here are the data needed for Flat Configurations: About builder, Website link , Price list, amenities, how many units availabile, photo links, locations, google map location link and landmarks, and {user_input}. Also retrive text data in json format'
-    prompt_message = f'looking for properties and builders - f{user_input}. Could you please provide me with information about the builders, their ongoing projects, flat configurations also retrive response in json format'
+    prompt_message = f'I am looking for properties and builders information - f{user_input}. Could you please provide me with information about the builders details, their ongoing projects,how many units availabile, property placename and cityname also retrive response in json format'
     return prompt_message
 
 def cleanJSON(jsonResponse):

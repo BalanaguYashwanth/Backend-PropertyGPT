@@ -42,7 +42,7 @@ def bardAPI():
 def prompt(user_input):
     # prompt_message = f'Please search properties and builders of Project Size, here are the data needed for Flat Configurations: About builder, Website link , Price list, amenities, how many units availabile, photo links, locations, google map location link and landmarks, and {user_input}. Also retrive text data in json format'
     data = "{\"builders\":[{\"name\":\"FtanukuBuilders\",\"ongoing_projects\":[{\"cityname\":\"Mumbai\",\"name\":\"ThePalms\",\"placename\":\"Mumbai\",\"units_available\":100},]}]}"
-    prompt_message = f'I am looking for properties and builders information - f{user_input}. Could you please provide me with information about the builders details, their ongoing projects,how many units availabile, latitude and longitude and cityname also retrive response json format'
+    prompt_message = f'I am looking for properties and builders information - f{user_input}. Could you please provide me with information about the builders details, their ongoing projects,how many units availabile, cityname and retrive response in json format also include all these places longitude and latitude in this json object'
     return prompt_message
 
 def cleanJSON(jsonResponse):

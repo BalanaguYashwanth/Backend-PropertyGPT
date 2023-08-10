@@ -20,6 +20,7 @@ palm.configure(api_key=os.environ['BARD_API_KEY'])
 def home():
     return {'status': 200}
 
+
 @app.route("/askHouzz", methods=['POST'])
 def bardAPI():
     response = request.json
@@ -32,13 +33,14 @@ def bardAPI():
         else:
             return jsonify({'response': 'please provide valid information'}), 200
     except Exception as e:
-      return f'{e}', 400
+        return f'{e}', 400
+
 
 def prompt(user_input):
     # prompt_message = f'Please search properties and builders of Project Size, here are the data needed for Flat Configurations: About builder, Website link , Price list, amenities, how many units availabile, photo links, locations, google map location link and landmarks, and {user_input}. Also retrive text data in json format'
     data = "{\"builders\":[{\"name\":\"FtanukuBuilders\",\"ongoing_projects\":[{\"cityname\":\"Mumbai\",\"name\":\"ThePalms\",\"placename\":\"Mumbai\",\"units_available\":100},]}]}"
     # prompt_message = f'I am looking for properties and builders information - f{user_input}. Could you please provide me with information about the builders details, their ongoing projects,how many units availabile, cityname and retrive response in json format also include all these places longitude and latitude in this json object'
-    prompt_message = f'Please provide me with accurate information about builders and properties in {user_input}. I am looking for details regarding the project size, flat configurations, price list for budget, floor plans, brochure, amenities, locations and landmarks, information about the builder, and frequently asked questions (FAQs)'
+    prompt_message = f'Please provide me with accurate information about builders and properties in {user_input} in table. I am looking for details regarding the project size, flat configurations, price list for budget, floor plans, brochure, amenities, locations and landmarks, information about the builder, and frequently asked questions (FAQs)'
     # prompt_message = user_input
     return prompt_message
 
@@ -46,6 +48,20 @@ def prompt(user_input):
 # keep validations like if email is not there then it should say "required email"
 # email verification for signup
 # better to go phonnumber verification
+
+
+@app.route("/train", methods=['POST'])
+def train():
+    response = request.json
+    message = response['message']
+    try:
+        if message:
+            response = palm.chat(messages=message)
+            return jsonify(response.last)
+        else:
+            return jsonify({'response': 'please provide valid information'}), 200
+    except Exception as e:
+        return f'{e}', 400
 
 
 @app.route('/signup', methods=['POST'])

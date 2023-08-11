@@ -40,7 +40,7 @@ def prompt(user_input):
     # prompt_message = f'Please search properties and builders of Project Size, here are the data needed for Flat Configurations: About builder, Website link , Price list, amenities, how many units availabile, photo links, locations, google map location link and landmarks, and {user_input}. Also retrive text data in json format'
     data = "{\"builders\":[{\"name\":\"FtanukuBuilders\",\"ongoing_projects\":[{\"cityname\":\"Mumbai\",\"name\":\"ThePalms\",\"placename\":\"Mumbai\",\"units_available\":100},]}]}"
     # prompt_message = f'I am looking for properties and builders information - f{user_input}. Could you please provide me with information about the builders details, their ongoing projects,how many units availabile, cityname and retrive response in json format also include all these places longitude and latitude in this json object'
-    prompt_message = f'Please provide me with accurate information about builders and properties in {user_input} in table. I am looking for details regarding the project size, flat configurations, price list for budget, floor plans, brochure, amenities, locations and landmarks, information about the builder, and frequently asked questions (FAQs)'
+    prompt_message = f'Please provide me with accurate information about builders and properties in {user_input}. I am looking for details regarding the project size, flat configurations, price list for budget, floor plans, brochure, amenities, locations and landmarks, information about the builder, and frequently asked questions (FAQs)'
     # prompt_message = user_input
     return prompt_message
 

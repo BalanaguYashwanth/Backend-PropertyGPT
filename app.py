@@ -1,6 +1,4 @@
 import os
-import ast
-import re
 import json
 import requests
 from flask import Flask, request, jsonify
@@ -15,54 +13,14 @@ app = Flask(__name__)
 CORS(app)
 palm.configure(api_key=os.environ['BARD_API_KEY'])
 
-
 @app.route("/")
 def home():
     return {'status': 200}
-
-
-@app.route("/askHouzz", methods=['POST'])
-def bardAPI():
-    response = request.json
-    message = response['message']
-    try:
-        if message:
-            modified_message = prompt(message)
-            response = palm.chat(messages=modified_message)
-            return jsonify(response.last)
-        else:
-            return jsonify({'response': 'please provide valid information'}), 200
-    except Exception as e:
-        return f'{e}', 400
-
-
-def prompt(user_input):
-    # prompt_message = f'Please search properties and builders of Project Size, here are the data needed for Flat Configurations: About builder, Website link , Price list, amenities, how many units availabile, photo links, locations, google map location link and landmarks, and {user_input}. Also retrive text data in json format'
-    data = "{\"builders\":[{\"name\":\"FtanukuBuilders\",\"ongoing_projects\":[{\"cityname\":\"Mumbai\",\"name\":\"ThePalms\",\"placename\":\"Mumbai\",\"units_available\":100},]}]}"
-    # prompt_message = f'I am looking for properties and builders information - f{user_input}. Could you please provide me with information about the builders details, their ongoing projects,how many units availabile, cityname and retrive response in json format also include all these places longitude and latitude in this json object'
-    prompt_message = f'Please provide me with accurate information about builders and properties in {user_input}. I am looking for details regarding the project size, flat configurations, price list for budget, floor plans, brochure, amenities, locations and landmarks, information about the builder, and frequently asked questions (FAQs)'
-    # prompt_message = user_input
-    return prompt_message
 
 # todo items -
 # keep validations like if email is not there then it should say "required email"
 # email verification for signup
 # better to go phonnumber verification
-
-
-@app.route("/train", methods=['POST'])
-def train():
-    response = request.json
-    message = response['message']
-    try:
-        if message:
-            response = palm.chat(messages=message)
-            return jsonify(response.last)
-        else:
-            return jsonify({'response': 'please provide valid information'}), 200
-    except Exception as e:
-        return f'{e}', 400
-
 
 @app.route('/signup', methods=['POST'])
 def signup():
@@ -104,6 +62,46 @@ def check_token(f):
             return {'message': 'Invalid User, Please signin'}, 400
         return f(*args, **kwargs)
     return wrap
+
+
+@app.route("/train", methods=['POST'])
+@check_token
+def train():
+    response = request.json
+    message = response['message']
+    try:
+        if message:
+            response = palm.chat(messages=message)
+            return jsonify(response.last)
+        else:
+            return jsonify({'response': 'please provide valid information'}), 200
+    except Exception as e:
+        return f'{e}', 400
+
+
+@app.route("/askHouzz", methods=['POST'])
+@check_token
+def bardAPI():
+    response = request.json
+    message = response['message']
+    try:
+        if message:
+            modified_message = prompt(message)
+            response = palm.chat(messages=modified_message)
+            return jsonify(response.last)
+        else:
+            return jsonify({'response': 'please provide valid information'}), 200
+    except Exception as e:
+        return f'{e}', 400
+
+
+def prompt(user_input):
+    # prompt_message = f'Please search properties and builders of Project Size, here are the data needed for Flat Configurations: About builder, Website link , Price list, amenities, how many units availabile, photo links, locations, google map location link and landmarks, and {user_input}. Also retrive text data in json format'
+    data = "{\"builders\":[{\"name\":\"FtanukuBuilders\",\"ongoing_projects\":[{\"cityname\":\"Mumbai\",\"name\":\"ThePalms\",\"placename\":\"Mumbai\",\"units_available\":100},]}]}"
+    # prompt_message = f'I am looking for properties and builders information - f{user_input}. Could you please provide me with information about the builders details, their ongoing projects,how many units availabile, cityname and retrive response in json format also include all these places longitude and latitude in this json object'
+    prompt_message = f'Please provide me with accurate information about builders and properties in {user_input}. I am looking for details regarding the project size, flat configurations, price list for budget, floor plans, brochure, amenities, locations and landmarks, information about the builder, and frequently asked questions (FAQs)'
+    # prompt_message = user_input
+    return prompt_message
 
 
 @app.route('/userinfo', methods=['GET'])
@@ -174,9 +172,6 @@ def ask():
 
     try:
         userRequest = request.json['data']
-        collection_type = request.json['collection_type']
-
-        uid = request.user['uid']
         userData = userRequest['messages'][0]['content']
 
         jsonResponse = json.dumps(userRequest)
@@ -185,12 +180,8 @@ def ask():
         content = response.json()
 
         chatGPTResponse = content['choices'][0]['message']['content']
-
-        createdResponse = create(
-            uid=uid, user=userData, chatgpt=chatGPTResponse, collection_type=collection_type)
-
         # message = create(uid=uid, user='what is Stack', chatgpt='Stack is related to data structures', collection_type=collection_type)
-        return jsonify({"response": createdResponse}), 200
+        return jsonify({"response": chatGPTResponse}), 200
     except Exception as e:
         return f'Error Occured: {e}', 400
 
@@ -224,6 +215,55 @@ def create(uid, user, chatgpt, collection_type):
         return message
     except Exception as e:
         return f'Error Occured: {e}', 400
+
+
+@app.route('/createCompany', methods=['POST'])
+@check_token
+def create_company():
+    try:
+        collection_name = 'companies'
+        companies_count = 0
+
+        companies_count = get_collection_length(collection_name)
+
+        uid = request.user['uid']
+        email = request.user['email']
+        request.json['uid'] = uid
+        request.json['email'] = email
+
+        db.collection(collection_name).document(
+            str(companies_count)).set(request.json)
+        return request.json
+
+    except Exception as e:
+        return f"{e}", 400
+
+
+@app.route('/getCompanyDetail', methods=['GET'])
+@check_token
+def get_company_detail():
+    try:
+        empty_companydata = {
+            "name": "",
+            "meetingURL": ""
+        }
+        collection_name = 'companies'
+        uid = request.user['uid']
+        all_companies = [doc.to_dict()
+                         for doc in db.collection(collection_name).stream()]
+        for company in all_companies:
+            if company['uid'] == uid:
+                return company
+        return empty_companydata
+    except Exception as e:
+        return f"{e}", 400
+
+
+def get_collection_length(collection_name: str):
+    if db.collection(collection_name):
+        collection_length_ref = db.collection(collection_name).count().get()
+        companies_count = collection_length_ref[0][0].value
+    return companies_count
 
 
 if __name__ == '__main__':
